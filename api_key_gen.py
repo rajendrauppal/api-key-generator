@@ -35,7 +35,9 @@ MONGODB_COLLECTION = "keys"
 
 class APIKeyDatabase(object):
     def __init__(self):
-        pass
+        connection = pymongo.MongoClient(MONGODB_SERVER, MONGODB_PORT)
+        db = connection[MONGODB_DB]
+        self.collection = db[MONGODB_COLLECTION]
 
     def insert(self, key):
         pass
@@ -69,6 +71,7 @@ class APIKeyGenerator(object):
 
 def main():
     api_key_gen = APIKeyGenerator()
+    api_key_db = APIKeyDatabase()
     for x in range(1, 11):
         print api_key_gen.generate()
 
