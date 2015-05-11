@@ -17,7 +17,7 @@ __credits__ = ["Rajendra Kumar Uppal"]
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Rajendra Kumar Uppal"
-__email__ = "rajen.iitd@gmail.com"
+__email__ = "rajen.iitd [at] gmail.com"
 __status__ = "Production"
 
 
@@ -25,25 +25,30 @@ import random
 import hashlib
 import base64
 import pymongo
+import argparse
 
 
 MONGODB_SERVER = "localhost"
 MONGODB_PORT = 27017
 MONGODB_DB = "apikeys"
 MONGODB_COLLECTION = "keys"
+APIKEY_POOL_SIZE = 1000
 
 
 class APIKeyDatabase(object):
     def __init__(self):
         connection = pymongo.MongoClient(MONGODB_SERVER, MONGODB_PORT)
-        db = connection[MONGODB_DB]
-        self.collection = db[MONGODB_COLLECTION]
+        self.db = connection[MONGODB_DB]
+        if MONGODB_COLLECTION in self.db.collection_names():
+            self.db.drop_collection(MONGODB_COLLECTION)
+        self.collection = self.db[MONGODB_COLLECTION]
 
     def insert(self, key):
-        pass
+        api_key = {'key':key, 'used':'no'}
+        self.collection.insert(api_key)
 
     def get(self):
-        pass
+        return self.collection.find()
 
 
 class APIKeyGenerator(object):
@@ -65,15 +70,29 @@ class APIKeyGenerator(object):
         b64encoded_str = base64.b64encode(hashed_num, char_pair)
 
         # get api key
-        api_key = b64encoded_str.rstrip('==')
+        api_key = b64encoded_str.rstrip('=')
         return api_key
 
 
 def main():
+    arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
+    arg_parser.add_argument('-s', '--pool_size', help='Enter API key pool size, default is 1000.')
+    args = arg_parser.parse_args()
+
+    pool_size = args.pool_size
+    global APIKEY_POOL_SIZE
+    if pool_size:
+        APIKEY_POOL_SIZE = int(pool_size)
+
     api_key_gen = APIKeyGenerator()
     api_key_db = APIKeyDatabase()
-    for x in range(1, 11):
-        print api_key_gen.generate()
+    for x in range(1, APIKEY_POOL_SIZE + 1):
+        key = api_key_gen.generate()
+        api_key_db.insert(key)
+
+    keys = api_key_db.get()
+    for key in keys:
+        print key
 
 
 if __name__ == '__main__':
