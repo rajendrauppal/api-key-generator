@@ -32,7 +32,7 @@ MONGODB_SERVER = "localhost"
 MONGODB_PORT = 27017
 MONGODB_DB = "apikeys"
 MONGODB_COLLECTION = "keys"
-APIKEY_POOL_SIZE = 1000
+APIKEY_POOL_SIZE = 10
 
 
 class APIKeyDatabase(object):
@@ -76,7 +76,7 @@ class APIKeyGenerator(object):
 
 def main():
     arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
-    arg_parser.add_argument('-s', '--pool_size', help='Enter API key pool size, default is 1000.')
+    arg_parser.add_argument('-s', '--pool_size', help='Enter API key pool size, default is 10.')
     args = arg_parser.parse_args()
 
     pool_size = args.pool_size
