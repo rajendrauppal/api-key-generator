@@ -8,6 +8,40 @@ Simple API key generator
 2. Inserts generated API keys into MongoDB and create an API key pool.
 3. Enables clients to ask for an API key, mark the returned API key as used.
 4. All subsequent API key requests must not return used API keys from the pool.
+
+Usages:
+=======
+
+1. As a module
+==============
+
+import api_key_gen
+keygen = api_key_gen.APIKeyGenerator()
+keygen.create_pool(100)
+
+for x in range(1, 11):
+    key = keygen.get_key() # throws error if key pool is exhausted
+
+# if key pool is exhausted, resize the pool
+keygen.resize_pool(200)
+
+
+2. As command line tool
+=======================
+
+create api key pool of default size 10
+$ python api_key_gen.py
+
+change default pool size
+$ python api_key_gen.py -s 100
+
+get key from pool (throws error if key pool is exhausted)
+$ python api_key_gen.py -g
+
+if key pool is exhausted, resize the pool
+$ python api_key_gen.py -r 200
+$ python api_key_gen.py -g
+
 """
 
 
@@ -53,6 +87,15 @@ class APIKeyDatabase(object):
 
 class APIKeyGenerator(object):
     def __init__(self):
+        self.api_key_db = APIKeyDatabase()
+
+    def create_pool(size):
+        pass
+
+    def get_key():
+        pass
+
+    def resize_pool(newsize):
         pass
 
     def generate(self):
@@ -77,6 +120,8 @@ class APIKeyGenerator(object):
 def main():
     arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
     arg_parser.add_argument('-s', '--pool_size', help='Enter API key pool size, default is 10.')
+    arg_parser.add_argument('-g', '--get_key', help='Returns a newly generated key.')
+    arg_parser.add_argument('-r', '--new_pool_size', help='Resizes the key pool.')
     args = arg_parser.parse_args()
 
     pool_size = args.pool_size
