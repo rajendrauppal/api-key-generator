@@ -10,11 +10,8 @@ Simple API key generator
 4. All subsequent API key requests must not return used API keys from the pool.
 
 Usages:
-=======
-
 1. As a module
 ==============
-
 import api_key_gen
 keygen = api_key_gen.APIKeyGenerator()
 keygen.create_pool(100)
@@ -22,13 +19,8 @@ keygen.create_pool(100)
 for x in range(1, 11):
     key = keygen.get_key() # throws error if key pool is exhausted
 
-# if key pool is exhausted, resize the pool
-keygen.resize_pool(200)
-
-
 2. As command line tool
 =======================
-
 create api key pool of default size 10
 $ python api_key_gen.py
 
@@ -37,17 +29,12 @@ $ python api_key_gen.py -s 100
 
 get key from pool (throws error if key pool is exhausted)
 $ python api_key_gen.py -g
-
-if key pool is exhausted, resize the pool
-$ python api_key_gen.py -r 200
-$ python api_key_gen.py -g
-
 """
 
 
 __author__ = 'Rajendra Kumar Uppal'
 __copyright__ = "Copyright 2015, Rajendra Kumar Uppal"
-__credits__ = ["Rajendra Kumar Uppal"]
+__credits__ = ["Rajendra Kumar Uppal", "Rich Atkinson"]
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Rajendra Kumar Uppal"
@@ -84,19 +71,26 @@ class APIKeyDatabase(object):
     def get(self):
         return self.collection.find()
 
+    def update(self, api_key):
+        self.collection.update_one({'key': api_key['key']}, {'$set': {'used': api_key['used']}})
+
 
 class APIKeyGenerator(object):
     def __init__(self):
         self.api_key_db = APIKeyDatabase()
 
-    def create_pool(size):
-        pass
+    def create_pool(self, size):
+        for x in range(1, size + 1):
+            key = self.generate()
+            self.api_key_db.insert(key)
 
-    def get_key():
-        pass
-
-    def resize_pool(newsize):
-        pass
+    def get_key(self):
+        keys = self.api_key_db.get()
+        for key in keys:
+            if key['used'] == 'no':
+                key['used'] = 'yes'
+                self.api_key_db.update(key)
+                return key['key']
 
     def generate(self):
         # generate 256-bit number
@@ -116,12 +110,14 @@ class APIKeyGenerator(object):
         api_key = b64encoded_str.rstrip('=')
         return api_key
 
+    def get_keys(self):
+        return self.api_key_db.get()
+
 
 def main():
     arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
     arg_parser.add_argument('-s', '--pool_size', help='Enter API key pool size, default is 10.')
     arg_parser.add_argument('-g', '--get_key', help='Returns a newly generated key.')
-    arg_parser.add_argument('-r', '--new_pool_size', help='Resizes the key pool.')
     args = arg_parser.parse_args()
 
     pool_size = args.pool_size
@@ -130,14 +126,15 @@ def main():
         APIKEY_POOL_SIZE = int(pool_size)
 
     api_key_gen = APIKeyGenerator()
-    api_key_db = APIKeyDatabase()
-    for x in range(1, APIKEY_POOL_SIZE + 1):
-        key = api_key_gen.generate()
-        api_key_db.insert(key)
+    api_key_gen.create_pool(APIKEY_POOL_SIZE)
 
-    keys = api_key_db.get()
-    for key in keys:
+    for x in range(1, APIKEY_POOL_SIZE + 1):
+        print api_key_gen.get_key()
+
+    for key in api_key_gen.get_keys():
         print key
+
+    print api_key_gen.get_key()
 
 
 if __name__ == '__main__':
