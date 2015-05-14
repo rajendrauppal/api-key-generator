@@ -17,7 +17,7 @@ keygen = api_key_gen.APIKeyGenerator()
 keygen.create_pool(100)
 
 for x in range(1, 11):
-    key = keygen.get_key() # throws error if key pool is exhausted
+    key = keygen.get_key() # returns None if key pool is exhausted
 
 2. As command line tool
 =======================
@@ -27,7 +27,7 @@ $ python api_key_gen.py
 change default pool size
 $ python api_key_gen.py -s 100
 
-get key from pool (throws error if key pool is exhausted)
+get key from pool (returns None if key pool is exhausted)
 $ python api_key_gen.py -g
 """
 
@@ -117,7 +117,7 @@ class APIKeyGenerator(object):
 def main():
     arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
     arg_parser.add_argument('-s', '--pool_size', help='Enter API key pool size, default is 10.')
-    arg_parser.add_argument('-g', '--get_key', help='Returns a newly generated key.')
+    arg_parser.add_argument('-g', '--get_key', help='Returns a newly generated key.', action='store_true')
     args = arg_parser.parse_args()
 
     pool_size = args.pool_size
@@ -128,11 +128,12 @@ def main():
     api_key_gen = APIKeyGenerator()
     api_key_gen.create_pool(APIKEY_POOL_SIZE)
 
-    for x in range(1, APIKEY_POOL_SIZE + 1):
-        print api_key_gen.get_key()
+    if not args.get_key:
+        for x in range(1, APIKEY_POOL_SIZE + 1):
+            print api_key_gen.get_key()
 
-    for key in api_key_gen.get_keys():
-        print key
+        for key in api_key_gen.get_keys():
+            print key
 
     print api_key_gen.get_key()
 
